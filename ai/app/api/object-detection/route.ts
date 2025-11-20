@@ -13,5 +13,24 @@ export const POST = async (request: NextRequest) => {
     if (!image) {
       return NextResponse.json({ error: "no image provided" }, { status: 404 });
     }
-  } catch (error) {}
+    const results = (await inference.objectDetection({
+      model: "facebook/detr-resnet-50",
+      data: image,
+    })) as any;
+
+    const objects = results
+      .filter((obj: any) => obj.score > 0.5)
+      .map((obj: any) => ({
+        label: obj.label,
+        score: obj.score,
+        box: obj.box,
+      }));
+    return NextResponse.json({ objects });
+  } catch (error) {
+    console.log("ERROR object detection ", error);
+    return NextResponse.json(
+      { error: "interval server ERROR" },
+      { status: 500 }
+    );
+  }
 };
